@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>rgb.fm</title>
+  <link rel="icon" href="rgb-logo.png" type="image/png">
+  <style>
+    /* global styling using georgia font */
+    body {
+      font-family: Georgia, serif;
+      background: #222;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+      transition: background 0.5s ease, color 0.5s ease;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    /* section headers: bold */
+    .section-header {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    /* main container: three columns */
+    #main-container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: nowrap;
+      margin-top: 20px;
+    }
+    /* left column: color selection */
+    #content-left {
+      flex: 0 0 250px;
+      background: transparent;
+      padding: 10px;
+      text-align: left;
+    }
+    /* center column: last.fm inputs and results */
+    #content-center {
+      flex: 1 1 400px;
+      background: transparent;
+      padding: 10px;
+      text-align: center;
+      margin: 0 auto;
+    }
+    /* right column: leaderboard */
+    #content-right {
+      flex: 0 0 250px;
+      background: transparent;
+      padding: 10px;
+      text-align: left;
+    }
+    /* input group styling */
+    .input-group {
+      margin-bottom: 10px;
+      display: block;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 5px 0;
+      font-size: 1em;
+    }
+    /* native color input styling */
+    #color {
+      width: 50px;
+      height: 50px;
+      border: 2px solid #eee;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    /* manual rgb input styling (reduced width) */
+    .rgb-input {
+      width: 40px;
+      margin-right: 5px;
+    }
+    /* rgb-values styling in left column */
+    #rgb-values {
+      display: block;
+      text-align: left;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    #album-art img {
+      max-width: 150px;
+      margin-top: 20px;
+    }
+    .link-img {
+      width: 40px;
+      height: 40px;
+      margin: 0 10px;
+      vertical-align: middle;
+    }
+    /* loading spinner styling */
+    #loading-spinner {
+      display: none;
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1500;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* leaderboard styling */
+    #leaderboard h3 {
+      margin-top: 0;
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .leaderboard-item img {
+      width: 30px;
+      height: 30px;
+      border-radius: 3px;
+      margin-right: 10px;
+    }
+    /* footer styling */
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      text-align: center;
+      color: #aaa;
+    }
+    footer a {
+      color: #aaa;
+      text-decoration: none;
+      margin: 0 5px;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>rgb.fm</h1>
+  <div id="main-container">
+    <!-- Left Column: Color Selection -->
+    <div id="content-left">
+      <div class="section-header">color selection</div>
+      <div class="input-group">
+        <label for="color">color wheel:</label><br>
+        <input id="color" type="color" value="#000000">
+      </div>
+      <div class="input-group">
+        <label>manual rgb:</label><br>
+        <input id="r-input" class="rgb-input" type="number" placeholder="r" min="0" max="255">
+        <input id="g-input" class="rgb-input" type="number" placeholder="g" min="0" max="255">
+        <input id="b-input" class="rgb-input" type="number" placeholder="b" min="0" max="255">
+      </div>
+      <div id="rgb-values">current color: (0, 0, 0)</div>
+    </div>
+    
+    <!-- Center Column: Last.fm Inputs & Results -->
+    <div id="content-center">
+      <div class="section-header">enter your last.fm info</div>
+      <div class="input-group">
+        <input id="username" type="text" placeholder="enter last.fm username">
+      </div>
+      <div class="input-group">
+        <select id="period">
+          <option value="7day">7 day</option>
+          <option value="1month">1 month</option>
+          <option value="3month">3 month</option>
+          <option value="6month">6 month</option>
+          <option value="12month" selected>12 month</option>
+          <option value="overall">overall</option>
+        </select>
+        <select id="limit">
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="300">300</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <button onclick="submitRequest()">find track</button>
+      </div>
+      <div id="result"></div>
+      <div id="album-art"></div>
+      <div id="links"></div>
+    </div>
+    
+    <!-- Right Column: Leaderboard -->
+    <div id="content-right">
+      <div id="leaderboard">
+        <h3>latest songs</h3>
+        <div id="leaderboard-items"></div>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    rgb.fm finds the track from your top tracks whose art matches the color you choose. created by jasondip – 
+    <a href="https://github.com/jdiplas" target="_blank">github</a> | 
+    <a href="https://www.last.fm/user/jasondip" target="_blank">last.fm</a>
+  </footer>
+  
+  <script>
+    // When the color wheel changes, update background, rgb display, and sync manual inputs.
+    document.getElementById('color').addEventListener('input', function() {
+      let currentColor = this.value; // Format: "#rrggbb"
+      document.body.style.background = currentColor;
+      
+      let hex = currentColor.charAt(0) === "#" ? currentColor.substring(1) : currentColor;
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      
+      document.getElementById('rgb-values').innerText = `current color: (${r}, ${g}, ${b})`;
+      document.getElementById('r-input').value = r;
+      document.getElementById('g-input').value = g;
+      document.getElementById('b-input').value = b;
+      
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      document.body.style.color = brightness > 128 ? "#000" : "#eee";
+    });
+    
+    // Update background from manual rgb inputs.
+    function updateFromManualInputs() {
+      const r = parseInt(document.getElementById('r-input').value) || 0;
+      const g = parseInt(document.getElementById('g-input').value) || 0;
+      const b = parseInt(document.getElementById('b-input').value) || 0;
+      const hex = "#" + [r, g, b].map(val => {
+        let h = val.toString(16);
+        return h.length === 1 ? "0" + h : h;
+      }).join("");
+      document.getElementById('color').value = hex;
+      document.body.style.background = hex;
+      document.getElementById('rgb-values').innerText = `current color: (${r}, ${g}, ${b})`;
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      document.body.style.color = brightness > 128 ? "#000" : "#eee";
+    }
+    
+    document.getElementById('r-input').addEventListener('change', updateFromManualInputs);
+    document.getElementById('g-input').addEventListener('change', updateFromManualInputs);
+    document.getElementById('b-input').addEventListener('change', updateFromManualInputs);
+    
+    function showSpinner() {
+      document.getElementById('loading-spinner').style.display = 'block';
+    }
+    
+    function hideSpinner() {
+      document.getElementById('loading-spinner').style.display = 'none';
+    }
+    
+    function submitRequest() {
+      showSpinner();
+      const username = document.getElementById('username').value;
+      const period = document.getElementById('period').value;
+      const limit = document.getElementById('limit').value;
+      
+      let r = parseInt(document.getElementById('r-input').value);
+      let g = parseInt(document.getElementById('g-input').value);
+      let b = parseInt(document.getElementById('b-input').value);
+      if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        let colorHex = document.getElementById('color').value;
+        if (colorHex.charAt(0) === "#") {
+          colorHex = colorHex.substring(1);
+        }
+        r = parseInt(colorHex.slice(0, 2), 16);
+        g = parseInt(colorHex.slice(2, 4), 16);
+        b = parseInt(colorHex.slice(4, 6), 16);
+      }
+      
+      fetch("/api/fetch_and_match", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username, period, limit, r, g, b})
+      })
+      .then(response => response.json())
+      .then(function(response) {
+        hideSpinner();
+        if (response.error) {
+          document.getElementById('result').innerText = response.error;
+          document.getElementById('album-art').innerHTML = "";
+          document.getElementById('links').innerHTML = "";
+          updateLeaderboard([]);
+        } else {
+          document.getElementById('result').innerHTML =
+            `<h2>${response.name} by ${response.artist}</h2>
+             <p>average rgb: (${response.rgb[0]}, ${response.rgb[1]}, ${response.rgb[2]})</p>`;
+          document.getElementById('album-art').innerHTML = `<img src="${response.image_url}" alt="album art">`;
+          document.getElementById('links').innerHTML =
+            `<a href="${response.spotify_url}" target="_blank" title="spotify">
+               <img class="link-img" src="spotify.png" alt="spotify logo">
+             </a>
+             <a href="${response.lastfm_url}" target="_blank" title="last.fm">
+               <img class="link-img" src="lastfm.png" alt="last.fm logo">
+             </a>`;
+          updateLeaderboard(response.leaderboard);
+        }
+      })
+      .catch(function(error) {
+        hideSpinner();
+        document.getElementById('result').innerText = "an error occurred.";
+        console.error(error);
+      });
+    }
+    
+    function updateLeaderboard(items) {
+      const container = document.getElementById('leaderboard-items');
+      container.innerHTML = "";
+      if (!items || items.length === 0) {
+        container.innerHTML = "<p>no songs yet.</p>";
+      } else {
+        items.forEach(function(item) {
+          container.innerHTML += `<div class="leaderboard-item">
+              <img src="${item.image_url}" alt="album art">
+              <span>${item.name} by ${item.artist} (user: ${item.username})</span>
+            </div>`;
+        });
+      }
+    }
+  </script>
+</body>
+</html>
