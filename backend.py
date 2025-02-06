@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import requests
@@ -7,6 +7,10 @@ from io import BytesIO
 from PIL import Image
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyClientCredentials
+from dotenv import load_dotenv
+
+# Load environment variables from .env (for local development)
+load_dotenv()
 
 # -----------------------------
 # Load API keys from environment variables
@@ -138,6 +142,11 @@ def update_leaderboard(song):
 # -----------------------------
 app = Flask(__name__)
 limiter = Limiter(app, key_func=get_remote_address, default_limits=["10 per minute"])
+
+# Serve the frontend file when someone accesses the root URL
+@app.route("/")
+def index():
+    return send_from_directory(os.getcwd(), "frontend.html")
 
 class API:
     def fetch_and_match(self, username, period, limit, r, g, b):
