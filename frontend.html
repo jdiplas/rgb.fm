@@ -73,7 +73,6 @@
       cursor: pointer;
       vertical-align: middle;
     }
-    /* remove manual RGB inputs; we now use only the color wheel */
     /* rgb-values styling in left column */
     #rgb-values {
       display: block;
@@ -138,20 +137,27 @@
       margin-top: 40px;
       font-size: 0.9em;
       text-align: center;
-      /* Remove fixed color so it inherits from body */
+      color: inherit;
+    }
+    footer p {
+      margin: 5px 0;
     }
     footer a {
       color: inherit;
       text-decoration: none;
       margin: 0 5px;
-      display: block;  /* each link on its own line */
+      display: inline;
     }
     footer a:hover {
       text-decoration: underline;
     }
+    /* Prevent wrapping of the "created by" line */
+    footer p:last-child {
+      white-space: nowrap;
+    }
   </style>
 </head>
-<body>
+<body onload="loadLeaderboard()">
   <h1>rgb.fm</h1>
   <div id="main-container">
     <!-- Left Column: Color Selection -->
@@ -205,28 +211,35 @@
   </div>
   
   <footer>
-    rgb.fm finds the track from your top tracks whose art matches the color you choose. created by jasondip – <br>
-    <a href="https://github.com/jdiplas" target="_blank">github</a> <br>
-    <a href="https://www.last.fm/user/jasondip" target="_blank">last.fm</a>
+    <p>rgb.fm finds the track from your top tracks whose art matches the color you choose.</p>
+    <p>created by jasondip – <a href="https://github.com/jdiplas" target="_blank">github</a> | <a href="https://www.last.fm/user/jasondip" target="_blank">last.fm</a></p>
   </footer>
   
   <script>
-    // When the color wheel changes, update background, rgb display, and sync (only using the color wheel now).
+    // When the color wheel changes, update background and rgb display.
     document.getElementById('color').addEventListener('input', function() {
       let currentColor = this.value; // Format: "#rrggbb"
       document.body.style.background = currentColor;
-      
-      // Remove the '#' and extract rgb values.
       let hex = currentColor.charAt(0) === "#" ? currentColor.substring(1) : currentColor;
       const r = parseInt(hex.slice(0, 2), 16);
       const g = parseInt(hex.slice(2, 4), 16);
       const b = parseInt(hex.slice(4, 6), 16);
-      
       document.getElementById('rgb-values').innerText = `current color: (${r}, ${g}, ${b})`;
-      
       const brightness = (r * 299 + g * 587 + b * 114) / 1000;
       document.body.style.color = brightness > 128 ? "#000" : "#eee";
     });
+    
+    // Fetch the current leaderboard when the page loads.
+    function loadLeaderboard() {
+      fetch("/api/leaderboard")
+      .then(response => response.json())
+      .then(function(data) {
+         updateLeaderboard(data);
+      })
+      .catch(function(error) {
+         console.error("Error loading leaderboard:", error);
+      });
+    }
     
     function showSpinner() {
       document.getElementById('loading-spinner').style.display = 'block';
@@ -242,7 +255,7 @@
       const period = document.getElementById('period').value;
       const limit = document.getElementById('limit').value;
       
-      // Use only the color from the color wheel.
+      // Use the color from the color wheel.
       let hex = document.getElementById('color').value;
       if (hex.charAt(0) === "#") { hex = hex.substring(1); }
       const r = parseInt(hex.slice(0, 2), 16);
