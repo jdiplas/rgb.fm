@@ -73,11 +73,7 @@
       cursor: pointer;
       vertical-align: middle;
     }
-    /* manual rgb input styling (reduced width) */
-    .rgb-input {
-      width: 40px;
-      margin-right: 5px;
-    }
+    /* remove manual RGB inputs; we now use only the color wheel */
     /* rgb-values styling in left column */
     #rgb-values {
       display: block;
@@ -142,13 +138,13 @@
       margin-top: 40px;
       font-size: 0.9em;
       text-align: center;
-      color: #aaa;
+      /* Remove fixed color so it inherits from body */
     }
     footer a {
-      color: #aaa;
+      color: inherit;
       text-decoration: none;
       margin: 0 5px;
-      display: block;  /* Make each link appear on its own line */
+      display: block;  /* each link on its own line */
     }
     footer a:hover {
       text-decoration: underline;
@@ -164,12 +160,6 @@
       <div class="input-group">
         <label for="color">color wheel:</label><br>
         <input id="color" type="color" value="#000000">
-      </div>
-      <div class="input-group">
-        <label>manual rgb:</label><br>
-        <input id="r-input" class="rgb-input" type="number" placeholder="r" min="0" max="255">
-        <input id="g-input" class="rgb-input" type="number" placeholder="g" min="0" max="255">
-        <input id="b-input" class="rgb-input" type="number" placeholder="b" min="0" max="255">
       </div>
       <div id="rgb-values">current color: (0, 0, 0)</div>
     </div>
@@ -221,44 +211,22 @@
   </footer>
   
   <script>
-    // When the color wheel changes, update background, rgb display, and sync manual inputs.
+    // When the color wheel changes, update background, rgb display, and sync (only using the color wheel now).
     document.getElementById('color').addEventListener('input', function() {
       let currentColor = this.value; // Format: "#rrggbb"
       document.body.style.background = currentColor;
       
+      // Remove the '#' and extract rgb values.
       let hex = currentColor.charAt(0) === "#" ? currentColor.substring(1) : currentColor;
       const r = parseInt(hex.slice(0, 2), 16);
       const g = parseInt(hex.slice(2, 4), 16);
       const b = parseInt(hex.slice(4, 6), 16);
       
       document.getElementById('rgb-values').innerText = `current color: (${r}, ${g}, ${b})`;
-      document.getElementById('r-input').value = r;
-      document.getElementById('g-input').value = g;
-      document.getElementById('b-input').value = b;
       
       const brightness = (r * 299 + g * 587 + b * 114) / 1000;
       document.body.style.color = brightness > 128 ? "#000" : "#eee";
     });
-    
-    // Update background from manual rgb inputs.
-    function updateFromManualInputs() {
-      const r = parseInt(document.getElementById('r-input').value) || 0;
-      const g = parseInt(document.getElementById('g-input').value) || 0;
-      const b = parseInt(document.getElementById('b-input').value) || 0;
-      const hex = "#" + [r, g, b].map(val => {
-        let h = val.toString(16);
-        return h.length === 1 ? "0" + h : h;
-      }).join("");
-      document.getElementById('color').value = hex;
-      document.body.style.background = hex;
-      document.getElementById('rgb-values').innerText = `current color: (${r}, ${g}, ${b})`;
-      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-      document.body.style.color = brightness > 128 ? "#000" : "#eee";
-    }
-    
-    document.getElementById('r-input').addEventListener('change', updateFromManualInputs);
-    document.getElementById('g-input').addEventListener('change', updateFromManualInputs);
-    document.getElementById('b-input').addEventListener('change', updateFromManualInputs);
     
     function showSpinner() {
       document.getElementById('loading-spinner').style.display = 'block';
@@ -274,18 +242,12 @@
       const period = document.getElementById('period').value;
       const limit = document.getElementById('limit').value;
       
-      let r = parseInt(document.getElementById('r-input').value);
-      let g = parseInt(document.getElementById('g-input').value);
-      let b = parseInt(document.getElementById('b-input').value);
-      if (isNaN(r) || isNaN(g) || isNaN(b)) {
-        let colorHex = document.getElementById('color').value;
-        if (colorHex.charAt(0) === "#") {
-          colorHex = colorHex.substring(1);
-        }
-        r = parseInt(colorHex.slice(0, 2), 16);
-        g = parseInt(colorHex.slice(2, 4), 16);
-        b = parseInt(colorHex.slice(4, 6), 16);
-      }
+      // Use only the color from the color wheel.
+      let hex = document.getElementById('color').value;
+      if (hex.charAt(0) === "#") { hex = hex.substring(1); }
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
       
       fetch("/api/fetch_and_match", {
         method: "POST",
@@ -337,5 +299,9 @@
       }
     }
   </script>
+  <!-- Loading Spinner -->
+  <div id="loading-spinner">
+    <div class="spinner"></div>
+  </div>
 </body>
 </html>
